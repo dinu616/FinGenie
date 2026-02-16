@@ -1,0 +1,4 @@
+cif_id_mask,in_out_flow,mcc_code,amount
+789012,outflow,5411,100.00
+789012,outflow,4511,500.00
+123456,outflow,5411,50.00

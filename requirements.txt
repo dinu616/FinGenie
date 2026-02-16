@@ -1,0 +1,13 @@
+python-dotenv
+langgraph
+langchain-core
+langchain-openai
+langchain-community
+langchain-aws
+pandas
+openpyxl
+boto3
+pydantic
+ipython
+graphviz
+streamlit
