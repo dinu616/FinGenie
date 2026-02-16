@@ -95,52 +95,110 @@ class MockStructuredOutputRunnable:
         self.schema = schema
     
     def invoke(self, messages):
-        # Return dummy instance of the schema
+        # Extract data from messages
+        import re
+        message_str = str(messages)
+        
+        # Return dummy instance of the schema based on actual data if possible
         if self.schema == ExtractedIDs:
             return ExtractedIDs(customer_ids=["789012", "345678"])
             
         elif self.schema == MultiCustomerAnalysis: # Transactions
-            return {
-                "parsed": MultiCustomerAnalysis(items=[
-                    SingleCustomerAnalysis(
-                        customer_id="789012",
-                        profiles=[CustomerProfile(profile_name="Frequent Flyer", reason="High spend on airlines")]
-                    )
-                ])
-            }
+            # Try to extract customer IDs from the message
+            customer_ids = self._extract_customer_ids(message_str)
+            items = []
+            for cid in customer_ids:
+                items.append(SingleCustomerAnalysis(
+                    customer_id=cid,
+                    profiles=[CustomerProfile(
+                        profile_name="Frequent Shopper" if cid == "123456" else "Frequent Flyer",
+                        reason=f"Transaction pattern analysis for {cid}"
+                    )]
+                ))
+            return {"parsed": MultiCustomerAnalysis(items=items)}
             
         elif self.schema == DemographicResponse:
-            return {
-                "parsed": DemographicResponse(items=[
-                    DemographicRow(customer_id="789012", summary="Male, 35, Expat, Married")
-                ])
-            }
+            customer_ids = self._extract_customer_ids(message_str)
+            items = []
+            for cid in customer_ids:
+                summary = self._generate_demographic_summary(cid, message_str)
+                items.append(DemographicRow(customer_id=cid, summary=summary))
+            return {"parsed": DemographicResponse(items=items)}
             
         elif self.schema == IncomeResponse:
-             return {
-                "parsed": IncomeResponse(items=[
-                    IncomeRow(customer_id="789012", income_info="Declared: AED 25k, Calculated: AED 22k")
-                ])
-            }
+            customer_ids = self._extract_customer_ids(message_str)
+            items = []
+            for cid in customer_ids:
+                income_info = self._generate_income_info(cid, message_str)
+                items.append(IncomeRow(customer_id=cid, income_info=income_info))
+            return {"parsed": IncomeResponse(items=items)}
             
         elif self.schema == CCHoldingResponse:
-             return {
-                "parsed": CCHoldingResponse(items=[
-                    CCHoldingRow(customer_id="789012", cc_holding_info="Visa Infinite, Mastercard World")
-                ])
-            }
+            customer_ids = self._extract_customer_ids(message_str)
+            items = []
+            for cid in customer_ids:
+                cc_info = self._generate_cc_info(cid, message_str)
+                items.append(CCHoldingRow(customer_id=cid, cc_holding_info=cc_info))
+            return {"parsed": CCHoldingResponse(items=items)}
             
         elif self.schema == MultiCustomerRecommender:
-             return {
-                "parsed": MultiCustomerRecommender(items=[
-                    SingleCCAnalysis(
-                        customer_id="789012",
-                        cc_summary=[CCRecommender(cc_recommended="Duo Card", recommended_reasons="Matches high grocery spend")]
-                    )
-                ])
-            }
+            customer_ids = self._extract_customer_ids(message_str)
+            items = []
+            for cid in customer_ids:
+                items.append(SingleCCAnalysis(
+                    customer_id=cid,
+                    cc_summary=[CCRecommender(
+                        cc_recommended="Premium Rewards Card" if cid == "345678" else "Cashback Card",
+                        recommended_reasons=f"Based on spending pattern for customer {cid}"
+                    )]
+                ))
+            return {"parsed": MultiCustomerRecommender(items=items)}
         
         return None
+    
+    def _extract_customer_ids(self, message_str):
+        """Extract customer IDs from DataFrame string representation"""
+        import re
+        # Look for patterns like cif_id_mask or customer IDs in the message
+        ids = re.findall(r'\b(\d{6})\b', message_str)
+        # Return unique IDs, preserving order
+        seen = set()
+        unique_ids = []
+        for id in ids:
+            if id not in seen:
+                seen.add(id)
+                unique_ids.append(id)
+        return unique_ids if unique_ids else ["789012"]
+    
+    def _generate_demographic_summary(self, cid, message_str):
+        """Generate demographic summary based on customer ID"""
+        if cid == "789012":
+            return "Male, Employed, Married, 2 dependents, USA national"
+        elif cid == "123456":
+            return "Female, Self-Employed, Single, 0 dependents, UK national"
+        elif cid == "345678":
+            return "Male, Employed, Married, 3 dependents, Indian national"
+        return f"Customer {cid} profile"
+    
+    def _generate_income_info(self, cid, message_str):
+        """Generate income info based on customer ID"""
+        if cid == "789012":
+            return "Declared: AED 25k, Calculated: AED 22k"
+        elif cid == "123456":
+            return "Declared: AED 15k, Calculated: AED 15k"
+        elif cid == "345678":
+            return "Declared: AED 28k, Calculated: AED 30k"
+        return f"Income data for {cid}"
+    
+    def _generate_cc_info(self, cid, message_str):
+        """Generate credit card info based on customer ID"""
+        if cid == "789012":
+            return "Visa Infinite (Limit: AED 50k)"
+        elif cid == "123456":
+            return "Mastercard Titanium (Limit: AED 10k)"
+        elif cid == "345678":
+            return "Visa Signature (Limit: AED 75k)"
+        return f"Credit card data for {cid}"
 
 def get_llm():
     """Returns a Mock LLM instance."""
