@@ -11,4 +11,4 @@ pydantic
 ipython
 graphviz
 streamlit
-altair
+altair<5
