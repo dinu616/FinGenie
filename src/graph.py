@@ -26,12 +26,21 @@ file_path_txt = os.path.join(DATA_DIR, "credit_cards.txt")
 
 def filter_node(state: AgentState):
     """
-    Entry point: Extracts extracted IDs and retrieves relevant data frames.
+    Entry point: Extracts customer IDs from message and retrieves relevant data frames.
     """
-    llm = get_llm()
-    # Mock extracting IDs from message. In real usage, use schema.
-    # We'll just define a mock ID list for now if the LLM doesn't extract it.
-    id_list = ["789012"] # Default fallback for the mock
+    # Extract customer IDs from the message
+    messages = state.get("messages", [])
+    id_list = ["789012"]  # Default fallback
+    
+    if messages:
+        last_message = messages[-1]
+        message_content = last_message.content if hasattr(last_message, 'content') else str(last_message[1] if isinstance(last_message, tuple) else last_message)
+        
+        # Extract IDs from message (look for pattern "Analyze customers: ID1, ID2, ...")
+        if "Analyze customers:" in message_content:
+            ids_str = message_content.split("Analyze customers:")[-1].strip()
+            # Split by comma and clean up
+            id_list = [id.strip() for id in ids_str.split(",") if id.strip()]
     
     # Load Data
     try:

@@ -69,7 +69,11 @@ def main():
     
     with st.sidebar:
         st.header("Input")
-        customer_id = st.text_input("Customer ID", value="789012")
+        customer_ids = st.text_area(
+            "Customer IDs", 
+            value="789012",
+            help="Enter one or more customer IDs, separated by commas (e.g., 789012, 345678)"
+        )
         run_btn = st.button("Run Analysis")
         
         status_placeholder = st.empty()
@@ -89,7 +93,7 @@ def main():
         
         # Run Stream
         thread = {"configurable": {"thread_id": "streamlit-1"}}
-        inputs = {"messages": [("human", f"Analyze customer {customer_id}")]}
+        inputs = {"messages": [("human", f"Analyze customers: {customer_ids}")]}
         
         try:
             # LangGraph stream returns events
